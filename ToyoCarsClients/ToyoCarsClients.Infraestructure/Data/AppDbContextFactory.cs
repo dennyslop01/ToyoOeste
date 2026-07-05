@@ -8,8 +8,10 @@ namespace ToyoCarsClients.Infraestructure.Data
         public AppDbContext CreateDbContext(string[] args)
         {
             var optionBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            optionBuilder.UseMySql("Server=toyooeste.com.ve:2082;Database=mialeggi_TClient;User=mialeggi_sitio1;Password=xgigovfolw3Orwl;",
-                new MySqlServerVersion(new Version(8, 0, 21)));
+            optionBuilder.UseSqlServer("Server=DENNYSLOP\\SQL2K19;database=ToyoClients;User ID=sa;Password=123456;TrustServerCertificate=True;MultipleActiveResultSets=true;");
+
+            //optionBuilder.UseMySql("Server=toyooeste.com.ve:2082;Database=mialeggi_TClient;User=mialeggi_sitio1;Password=xgigovfolw3Orwl;",
+            //    new MySqlServerVersion(new Version(8, 0, 21)));
 
             return new AppDbContext(optionBuilder.Options);
         }

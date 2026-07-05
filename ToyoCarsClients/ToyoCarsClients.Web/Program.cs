@@ -25,20 +25,35 @@ builder.Services.AddRazorComponents()
 //contexto de datos
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//    options.UseMySql(
+//        connectionString,
+//        ServerVersion.AutoDetect(connectionString), // O la versión específica de tu servidor MySQL
+//        mySqlOptions =>
+//        {
+//            mySqlOptions.EnableRetryOnFailure(
+//                maxRetryCount: 3,       // Número máximo de reintentos
+//                maxRetryDelay: TimeSpan.FromSeconds(10), // Retraso máximo entre reintentos
+//                errorNumbersToAdd: null  // Códigos de error MySQL adicionales a considerar transitorios (null para usar los predeterminados)
+//            );
+//        }
+//    )
+//);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(
+    options.UseSqlServer(
         connectionString,
-        ServerVersion.AutoDetect(connectionString), // O la versión específica de tu servidor MySQL
-        mySqlOptions =>
+        sqlServerOptions =>
         {
-            mySqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,       // Número máximo de reintentos
+            sqlServerOptions.EnableRetryOnFailure(
+                maxRetryCount: 3,                  // Número máximo de reintentos
                 maxRetryDelay: TimeSpan.FromSeconds(10), // Retraso máximo entre reintentos
-                errorNumbersToAdd: null  // Códigos de error MySQL adicionales a considerar transitorios (null para usar los predeterminados)
+                errorNumbersToAdd: null            // Códigos de error de SQL Server adicionales
             );
         }
     )
 );
+
 
 //automapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
