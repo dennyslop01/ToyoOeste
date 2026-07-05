@@ -1,0 +1,155 @@
+﻿@page "/actualizardatos"
+@inject ToyoCarsClients.Infraestructure.Services.InfoAutoDriveService InfoAutoService
+
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
+    <MudPaper Class="pa-6 rounded-lg" Elevation="25">
+        <MudIcon Icon="@Icons.Material.Filled.Business"
+                 Color="Color.Dark"
+                 Size="Size.Large"
+                 Class="mx-auto d-block mb-2" />
+        <MudText Typo="Typo.h4" Class="pa-4 text-black text-accent-4 text-center mb-6">ToyoOeste</MudText>
+        <MudText Typo="Typo.h6" Class="text-center mb-6">Actualizar Datos</MudText>
+
+        <EditForm Model="user" OnValidSubmit="HandleUpdate">
+            <DataAnnotationsValidator />
+
+            <!-- Campo Email -->
+            <MudTextField @bind-Value="user.Email" Placeholder="Correo Electrónico" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Email" MaxLength="50"
+                          HelperText="Por favor, ingresa un correo válido."
+                          Class="mt-4" />
+            <ValidationMessage For="@(() => user.Email)" />
+
+            <!-- Campo Telefono -->
+            <MudTextField @bind-Value="user.MovilNumber" Placeholder="Teléfono Móvil" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Number" MaxLength="11"
+                          HelperText="Por favor, ingresa tu teléfono móvil." />
+            <ValidationMessage For="@(() => user.MovilNumber)" />
+
+            <!-- Campo Movil -->
+            <MudTextField @bind-Value="user.PhoneNumber" Placeholder="Teléfono Fijo" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Number" MaxLength="10"
+                          HelperText="Por favor, ingresa tu teléfono fijo." />
+
+            <!-- Campo Dni -->
+            <MudTextField @bind-Value="user.DNINumber" Placeholder="Cédula" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Text" ReadOnly
+                          HelperText="Por favor, ingresa tu número de cédula." />
+            <ValidationMessage For="@(() => user.DNINumber)" />
+
+            @if (mostrarAlerta)
+            {
+                @if (tipoAlerta == 0)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @mensajeAlerta
+                        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @mensajeAlerta
+                        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                    </div>
+                }
+            }
+            <!-- Botón Registrar -->
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="background: #ac0505;" Class="mt-6 w-100 text-white">
+                Actualizar Datos
+            </MudButton>
+        </EditForm>
+
+    </MudPaper>
+</MudContainer>
+
+@if (cargando)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); align-content:center">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-cargando text-lg-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private UpdateUserDto user = new UpdateUserDto();
+
+    private string? mensajeAlerta;
+    private int tipoAlerta = 0;
+    private bool mostrarAlerta = false;
+    bool cargando = false;
+    DatosCliente cliente = new();
+
+
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+    [Inject] private IAuthService repository { get; set; } = null!;
+    [Inject] private AuthServiceLocal AuthService { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cargando = true;
+        try
+        {
+            string? username = await AuthService.GetTipoNumberDNIAsync();
+
+            if(string.IsNullOrEmpty(username))
+            {
+                mensajeAlerta = "Usuario no autenticado. Por favor, inicie sesión.";
+                mostrarAlerta = true;
+                cargando = false;
+                return;
+            }
+
+            cliente = await InfoAutoService.GetDatsClientesPorCedula(username);
+            if(cliente != null)
+            {
+                user.Email = cliente.Email;
+                user.MovilNumber = cliente.TelefonoMovil;
+                user.PhoneNumber = cliente.TelefonoOficina;
+                user.DNINumber = username;
+            }
+        }
+        catch(Exception ex)
+        {
+            mensajeAlerta = $"Error de comunicación, contacte al administrador. Error: {ex.Message}";
+        }
+        cargando = false;
+    }
+
+    private async Task HandleUpdate()
+    {
+        try
+        {
+            cliente = await InfoAutoService.ActualizarDatosClientes(user);
+
+            if (cliente != null)
+            {
+                Snackbar.Add("Datos actualizados exitosamente.", Severity.Success);
+                mensajeAlerta = "Datos actualizados exitosamente.";
+                mostrarAlerta = true;
+                tipoAlerta = 1;
+
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            mensajeAlerta = "Error al registrar el usuario.";
+            mostrarAlerta = true;
+        }
+    }
+}

@@ -1,0 +1,126 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
+    <MudPaper Class="pa-6 rounded-lg" Elevation="25">
+        <MudIcon Icon="@Icons.Material.Filled.Business"
+                 Color="Color.Dark"
+                 Size="Size.Large"
+                 Class="mx-auto d-block mb-2" />
+        <MudText Typo="Typo.h4" Class="pa-4 text-black text-accent-4 text-center mb-6">ToyoOeste</MudText>
+        <MudText Typo="Typo.h6" Class="text-center mb-6">Iniciar Sesión</MudText>
+        
+        <EditForm Model="login" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <MudTextField @bind-Value="login.Email" Placeholder="Correo Electrónico" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense"
+                          HelperText="Por favor, ingresa tu correo electrónico." Validation="@(new Func<string, string>(CheckIfExists))" />
+            <ValidationMessage For="@(() => login.Email)" />
+
+            <MudTextField @bind-Value="login.Password" Placeholder="Contraseña" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="@PasswordInput"
+                          HelperText="Por favor, ingresa tu contraseña."
+                          Class="mt-4" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon"
+                          OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+            <ValidationMessage For="@(() => login.Password)" />
+
+            @if (mostrarAlerta)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @mensajeAlerta
+                    <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                </div>
+            }
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="background: #ac0505;" Class="mt-6 w-100 text-white">
+                Iniciar Sesión
+            </MudButton>
+        </EditForm>
+
+        <MudText Class="text-center mt-4">
+            ¿No tienes cuenta? <MudLink Href="/register" Color="Color.Primary">Regístrate aquí</MudLink>
+        </MudText>
+        <MudText Class="text-center mt-4">
+            ¿Olvidaste tu contraseña? <MudLink Href="/resetPassword" Color="Color.Primary">Recuperala aquí</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+
+@code {
+    private readonly LoginRequestDto login = new();
+    public string Password { get; set; } = string.Empty;
+    string currentUri = "";
+    private bool isShow;
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+    private string? mensajeAlerta;
+    private bool mostrarAlerta = false;
+
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private ILoginService LoginService { get; set; } = null!;
+    [Inject] private IAuthService repository { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        currentUri = NavigationManager.Uri.Replace("login", string.Empty);
+        Password = login.Password;
+    }
+
+    private void ButtonTestclick()
+    {
+        if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            // var url = "api/auth/login";
+            // var response = await HttpClient.PostAsJsonAsync(url, login);
+
+            var response = await repository.Login(login);
+            if (response.IsAuthenticated == true)
+            {
+                //var json = await response;
+                //var loginResponse = JsonSerializer.Deserialize<LoginResponseDto>(response.ToString()!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                await ((AuthenticationProviderJWT)AuthenticationStateProvider).Login(response.Token);
+                NavigationManager.NavigateTo(currentUri, true);
+            }
+            else
+            {
+                Snackbar.Add("Credenciales inválidas. Inténtalo de nuevo.", Severity.Error);
+                mensajeAlerta = "Credenciales inválidas. Inténtalo de nuevo.";
+                mostrarAlerta = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al iniciar sesión: {ex.Message}", Severity.Error);
+            mensajeAlerta = $"Error al iniciar sesión: {ex.Message}";
+            mostrarAlerta = true;
+        }
+    }
+
+    private string CheckIfExists(string value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            return $"Email es requerido";
+        }
+
+        return null;
+    }
+}

@@ -1,0 +1,102 @@
+﻿@inherits LayoutComponentBase
+@* Required *@
+<MudThemeProvider @rendermode="InteractiveServer" />
+<MudPopoverProvider @rendermode="InteractiveServer" />
+<MudDialogProvider @rendermode="InteractiveServer" />
+<MudSnackbarProvider @rendermode="InteractiveServer" />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Style="background: linear-gradient(135deg, #f50b0b 0%, #ac0505 100%);">
+       @*  <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@((e) => DrawerToggle())" /> *@
+        @* <MudIcon Icon="@Icons.Material.Filled.Business" Style="margin-right: 8px;" /> *@
+        <MudText Typo="Typo.h6" Style="color: white;">@* ToyoOeste *@</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body1" Style="color: white; margin-right: 16px;">
+            <AuthLinks/>
+        </MudText>       
+    </MudAppBar>
+    @* <MudDrawer @bind-Open="_drawerOpen"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="2">
+        <NavMenu />
+    </MudDrawer> *@
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Style="margin-top: 3rem">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool _drawerOpen = false;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
+
+<style>
+    body, .table, .input,
+    .button, .icon {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 11px;
+    }
+
+    /* Estilo para el botón dentro de la tabla */
+    .boton-postular {
+        /* Aplica el mismo tamaño de fuente que el body/tabla */
+        font-size: 11px;
+        padding: 6px 10px;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    th, td {
+        /* Alinear el contenido horizontalmente al centro */
+        vertical-align: middle;
+    }
+
+    .modal-content {
+        /* Define un ancho máximo para pantallas grandes */
+        max-width: 500px;
+        width: 90%; /* Ocupa el 90% del ancho disponible */
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        /* Asegura que si el contenido es largo, se pueda hacer scroll */
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        /* Estilos para el cuadro del modal */
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        /* Opcional: define un ancho máximo */
+        max-width: 500px;
+        width: 90%;
+        height: 90%;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 11px;
+    }
+
+    .custom-modal-dialog {
+        margin-top: 50px; /* Ajusta este valor para la distancia deseada desde arriba */
+    }
+
+    /* Opcional: si usas Bootstrap y quieres sobrescribir su centrado */
+    .modal-dialog.modal-dialog-centered {
+        margin-top: 50px; /* Sobrescribe el estilo centrado de Bootstrap */
+        transform: none; /* Desactiva la transformación que usa Bootstrap para centrar */
+    }
+</style>

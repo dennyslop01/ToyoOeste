@@ -1,0 +1,78 @@
+﻿@rendermode @(new InteractiveServerRenderMode(false))
+
+@if(username is null)
+{
+    <MudContainer>
+        <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <a Href="/"><MudImage Src="logoapp01.png" Alt="Toyo oeste" Elevation="25" Class="rounded-lg" /></a>
+            <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Error"
+                       Style="background-color: rgba(255,255,255,0.2); color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.Login" />@* Iniciar Sesion *@
+            </MudButton>
+            <MudButton Href="/register" Color="Color.Error" Variant="Variant.Filled"
+                       Style="background-color: rgba(255,255,255,0.2); color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.HowToReg" />@* Registrarse *@
+            </MudButton>
+        </MudStack>
+    </MudContainer>
+}
+else
+{
+    <MudContainer>
+        <MudStack Row="true" Spacing="2" Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <a Href="/" ><MudImage Src="logoapp01.png" Alt="Toyo oeste" Elevation="25" Class="rounded-lg" /></a>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="d-inline-flex" Style="white-space: nowrap;">
+                Hola, @username
+            </MudText>
+            @* <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="EditUser"
+                       Style="background-color: rgba(255,255,255,0.2); color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.PersonPin" />Perfil
+            </MudButton> *@
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="Logout"
+                                               Style="background-color: rgba(255,255,255,0.2); color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.ExitToApp" />@* Salir *@
+            </MudButton>
+
+        </MudStack>
+    </MudContainer>
+}
+
+
+
+@code {
+    private string? username;
+    private string? role;
+    private double? scrollPosition;
+    string currentUri = "";
+
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
+    [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private AuthServiceLocal AuthService { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        currentUri = NavigationManager.Uri;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        username = await AuthService.GetNameAsync();
+        role = await AuthService.GetUserRoleAsync();
+    }
+
+    private async Task Logout()
+    {
+        if (AuthenticationStateProvider is AuthenticationProviderJWT customProvider)
+        {
+            await customProvider.Logout();
+        }
+
+        NavigationManager.NavigateTo(currentUri, true);
+    }
+
+    private void EditUser()
+    {
+        NavigationManager.NavigateTo("/profile");
+    }
+}

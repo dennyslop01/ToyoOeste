@@ -1,0 +1,56 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+Bienvenido a su nueva app ToyoOeste.
+@if (username is not null)
+{
+    <div class="flex flex-col items-center justify-center h-screen">
+        <MudContainer>
+            <MudStack Row="true" Spacing="10" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                <MudButton Href="/vehiculos" Color="Color.Error"
+                           Style="background-color: rgba(255,255,255,255); color: white; border:hidden">
+                    <MudImage Src="imagen 2.png" /> <br /> @* Vehículos registrados *@
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+        <br />
+        <MudContainer>
+            <MudStack Row="true" Spacing="10" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                <MudButton Href="/actualizardatos"
+                           Style="background-color: rgba(255,255,255,0.2); color: black;">
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <MudImage Src="usuario.png" /> <br /> @* Actualizar datos *@
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+        <br />
+        <MudContainer>
+            <MudStack Row="true" Spacing="10" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                <MudButton Href="/encuesta"
+                           Style="background-color: rgba(255,255,255,0.2); color: black;">
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <MudImage Src="encuesta.png" /> <br /> @* Actualizar datos *@
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </div>    
+}
+@code {
+    private string? username;
+
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = null!;
+    [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = null!;
+    [Inject] private AuthServiceLocal AuthService { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        username = await AuthService.GetNameAsync();
+    }
+}

@@ -1,0 +1,120 @@
+﻿@page "/encuesta"
+@using ToyoCarsClients.Domain.Entities
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
+    <MudPaper Class="pa-6 rounded-lg" Elevation="25">
+        <MudIcon Icon="@Icons.Material.Filled.Business"
+                 Color="Color.Dark"
+                 Size="Size.Large"
+                 Class="mx-auto d-block mb-2" />
+        <MudText Typo="Typo.h4" Class="pa-4 text-black text-accent-4 text-center mb-6">ToyoOeste</MudText>
+        <MudText Typo="Typo.h6" Class="text-center mb-6">Encuesta de Satisfacción</MudText>
+
+        <EditForm Model="encuesta" OnValidSubmit="HandleUpdate">
+            <DataAnnotationsValidator />
+
+            <MudText Typo="Typo.subtitle1" Class="mb-2">¿Qué tan satisfecho está con nuestro servicio?</MudText>
+            <MudRating @bind-SelectedValue="@encuesta.Rating" Color="Color.Warning" FullIcon="@Icons.Material.Filled.Star" EmptyIcon="@Icons.Material.Outlined.StarBorder" />
+
+            <MudTextField @bind-Value="@encuesta.Comentario" For="@(() => encuesta.Comentario)" Label="Comentarios (Opcional)" Variant="Variant.Text" Lines="3" Class="mt-4" />
+
+
+            @if (mostrarAlerta)
+            {
+                @if (tipoAlerta == 0)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @mensajeAlerta
+                        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @mensajeAlerta
+                        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                    </div>
+                }
+            }
+            <!-- Botón Registrar -->
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="background: #ac0505;" Class="mt-6 w-100 text-white">
+                Guardar
+            </MudButton>
+        </EditForm>
+
+    </MudPaper>
+</MudContainer>
+
+@if (cargando)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); align-content:center">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-cargando text-lg-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool cargando = false;
+    private bool mostrarAlerta = false;
+    private string mensajeAlerta = string.Empty;
+    private int tipoAlerta = 0; // 0: Error, 1: Éxito
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private IEncuesta encuestaService { get; set; } = null!;
+    [Inject] private AuthServiceLocal AuthService { get; set; } = null!;
+    private string email = string.Empty;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    Encuestas encuesta = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        cargando = true;
+        try
+        {
+            email = await AuthService.GetUserNameAsync();
+
+            if (string.IsNullOrEmpty(email))
+            {
+                mensajeAlerta = "Usuario no autenticado. Por favor, inicie sesión.";
+                mostrarAlerta = true;
+                cargando = false;
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeAlerta = $"Error de comunicación, contacte al administrador. Error: {ex.Message}";
+        }
+        cargando = false;
+    }
+
+    private async Task HandleUpdate()
+    {
+        try
+        {
+            await encuestaService.EnviarEncuestaAsync(email, encuesta.Rating, encuesta.Comentario);
+
+            Snackbar.Add("Encuesta cargada exitosamente.", Severity.Success);
+            mensajeAlerta = "Encuesta cargada exitosamente.";
+            mostrarAlerta = true;
+            tipoAlerta = 1;
+
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+            mensajeAlerta = "Error al registrar la encuesta de satisfacción.";
+            mostrarAlerta = true;
+        }
+    }
+}

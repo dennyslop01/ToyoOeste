@@ -1,0 +1,167 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-10">
+    <MudPaper Class="pa-6 rounded-lg" Elevation="25">
+        <MudIcon Icon="@Icons.Material.Filled.Business"
+                 Color="Color.Dark"
+                 Size="Size.Large"
+                 Class="mx-auto d-block mb-2" />
+        <MudText Typo="Typo.h4" Class="pa-4 text-black text-accent-4 text-center mb-6">ToyoOeste</MudText>
+        <MudText Typo="Typo.h6" Class="text-center mb-6">Registro de Usuario</MudText>
+
+        <EditForm Model="user" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+            <!-- Campo Nombre -->
+            <MudTextField @bind-Value="user.Name" Placeholder="Nombre" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" 
+                          HelperText="Por favor, ingresa tu nombre." />
+            <ValidationMessage For="@(() => user.Name)" />
+
+            <!-- Campo Email -->
+            <MudTextField @bind-Value="user.Email" Placeholder="Correo Electrónico" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Email"
+                          HelperText="Por favor, ingresa un correo válido."
+                          Class="mt-4" />
+            <ValidationMessage For="@(() => user.Email)" />
+
+            <!-- Campo Contraseña -->
+            <MudTextField @bind-Value="user.Password" Placeholder="Contraseña" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="@PasswordInput"
+                          HelperText="Por favor, ingresa una contraseña segura."
+                          Class="mt-4" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon"
+                          OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+            <ValidationMessage For="@(() => user.Password)" />
+
+            <!-- Campo Telefono -->
+            <MudTextField @bind-Value="user.MovilNumber" Placeholder="Teléfono Móvil" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Number"
+                          HelperText="Por favor, ingresa tu teléfono móvil." />
+            <ValidationMessage For="@(() => user.MovilNumber)" />
+
+            <!-- Campo Tipo Dni -->
+            <MudSelect T="string" @bind-Value="user.TipoDNI" Placeholder="Selecciona el tipo de documento"
+                       Variant="Variant.Outlined"  FullWidth="true" Margin="Margin.Dense"
+                       HelperText="Por favor, selecciona el tipo de documento">
+                <MudSelectItem Value="@("V")">Cédula de Identidad</MudSelectItem>
+                <MudSelectItem Value="@("J")">Jurídico</MudSelectItem>
+                <MudSelectItem Value="@("G")">Gubernamental</MudSelectItem>
+            </MudSelect> 
+            <ValidationMessage For="@(() => user.TipoDNI)" />
+
+            <!-- Campo Dni -->
+            <MudTextField @bind-Value="user.DNINumber" Placeholder="Nro. documento" Variant="Variant.Outlined"
+                          FullWidth="true" Margin="Margin.Dense" InputType="InputType.Number"
+                          HelperText="Por favor, ingresa tu número número de documento." />
+            <ValidationMessage For="@(() => user.DNINumber)" />
+
+            @if (mostrarAlerta)
+            {
+                @if (tipoAlerta == 0)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @mensajeAlerta
+                        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @mensajeAlerta
+                        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+                    </div>
+                }
+            }
+            <!-- Botón Registrar -->
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="background: #ac0505;" Class="mt-6 w-100 text-white">
+                Registrar
+            </MudButton>
+        </EditForm>
+        
+
+        <!-- Enlace para iniciar sesión -->
+        <MudText Class="text-center mt-4">
+            ¿Ya tienes cuenta? <MudLink Href="/login" Color="Color.Primary">Inicia sesión aquí</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private CreateUserDto user = new CreateUserDto();
+
+    public string Password { get; set; } = string.Empty;
+    private bool isShow;
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+    private string? mensajeAlerta;
+    private int tipoAlerta = 0;
+    private bool mostrarAlerta = false;
+
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+    [Inject] private IAuthService repository { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        Password = user.Password;
+    }
+
+    private void ButtonTestclick()
+    {
+        if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            //user.Role = Role.Customer;
+            // var url = "api/auth/register";
+            // var response = await HttpClient.PostAsJsonAsync(url, user);
+            var response = await repository.Register(user);
+
+            if (response != null)
+            {
+                Snackbar.Add("Registro exitoso.", Severity.Success);
+                mensajeAlerta = "Registro exitoso.";
+                mostrarAlerta = true;
+                tipoAlerta = 1;
+
+                NavigationManager.NavigateTo("/login");
+            }
+        }
+        catch(Exception ex)
+        {
+            if (ex.Message.Contains("correo"))
+            {
+                Snackbar.Add("El correo electrónico ya está en uso.", Severity.Warning);
+                mensajeAlerta = "El correo electrónico ya está en uso.";
+                mostrarAlerta = true;
+            }
+            else if (ex.Message.Contains("cédula"))
+            {
+                Snackbar.Add("Error al registrar el usuario.", Severity.Error);
+                mensajeAlerta = "El correo electrónico ya está en uso.";
+                mostrarAlerta = true;
+            }
+            else
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+                mensajeAlerta = "Error al registrar el usuario.";
+                mostrarAlerta = true;
+            }
+        }
+    }
+}

@@ -1,0 +1,221 @@
+﻿@page "/vehiculos"
+@rendermode InteractiveServer
+@inject ToyoCarsClients.Infraestructure.Services.InfoAutoDriveService InfoAutoService
+
+<h3>Vehículos</h3>
+@if (vehiculos is null)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p>Cargando datos...</p>
+    </div>
+}
+else if (!vehiculos.Any())
+{
+    <div class="alert alert-info text-center">No hay vehículos disponibles.</div>
+}
+else
+{
+    <table class="table" id="mitabla">
+        <thead class="table">
+            <tr>
+                <th>Placa</th>
+                <th>Cod Modelo</th>
+                <th>Modelo</th>
+                <th>Año</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (p, index) in vehiculos.Select((p, i) => (p, i + 1)))
+            {
+                <tr>
+                    <button class="btn btn-link btn-sm me-2 align-content-end" title="Regresar" @onclick="() => EditarEntidad(p)">
+                        @(p.Placa == null ? "-" : p.Placa)
+                    </button>
+                    <td>@p.ModeloCod</td>
+                    <td>@p.ModeloDesc</td>
+                    <td>@p.Anio</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <br />
+    <hr />
+    <div class="row">
+        <div class="col-10">
+            <button class="btn btn-secondary me-1" title="Regresar" @onclick="Regresar">
+                <i class="bi bi-chevron-double-left"></i>&nbsp;Regresar
+            </button>
+        </div>
+    </div>
+}    
+
+@if (cargando)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); align-content:center">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-cargando text-lg-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (mostrarAlerta)
+{
+    <div id="divAlerta" class="alert alert-success alert-dismissible fade show toast-container" role="alert" style="display:none;">
+        @mensajeAlerta
+        <button type="button" class="btn-close" @onclick="() => mostrarAlerta = false"></button>
+    </div>
+}
+
+@if (mostrarFormulario)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog custom-modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalle</h5>
+                    <button type="button" class="btn-close" @onclick="Cancelar"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="entidadActual">
+
+                        <div class="mb-3">
+                            <strong><label class="form-label">Placa:</label></strong>
+                            <label class="form-label">@entidadActual.Placa</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Modelo Código:</label></strong>
+                            <label class="form-label">@entidadActual.ModeloCod</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Modelo:</label></strong>
+                            <label class="form-label">@entidadActual.ModeloDesc</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Año:</label></strong>
+                            <label class="form-label">@entidadActual.Anio</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Color:</label></strong>
+                            <label class="form-label">@entidadActual.Color</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Número Os:</label></strong>
+                            <label class="form-label">@entidadActual.NumeroOs</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Departamento:</label></strong>
+                            <label class="form-label">@entidadActual.NomDpto</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Subtipo Os:</label></strong>
+                            <label class="form-label">@entidadActual.SubtipoOs</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Fecha Recepción:</label></strong>
+                            <label class="form-label">@entidadActual.FechaRecep</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Fecha Prometida:</label></strong>
+                            <label class="form-label">@entidadActual.FechaPrometida</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Estado:</label></strong>
+                            <label class="form-label">@entidadActual.EstadoOs</label>
+                        </div>
+                        <div class="mb-3">
+                            <strong><label class="form-label">Asesor:</label></strong>
+                            <label class="form-label">@entidadActual.Asesor</label>
+                        </div>
+                        @* <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary" @onclick="Cancelar">
+                                <i class="bi bi-times"></i> Cerrar
+                            </button>
+                        </div> *@
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+@code {
+
+    List<VehiculoTaller> vehiculos = new();
+    VehiculoTaller entidadActual = new();
+    bool mostrarFormulario = false;
+    bool cargando = false;
+    bool mostrarAlerta = false;
+    string mensajeAlerta = string.Empty;
+    [Inject] private AuthServiceLocal AuthService { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cargando = true;
+        try
+        {
+            string? username = await AuthService.GetTipoNumberDNIAsync();
+
+            if (string.IsNullOrEmpty(username))
+            {
+                mensajeAlerta = "Usuario no autenticado. Por favor, inicie sesión.";
+                mostrarAlerta = true;
+                cargando = false;
+                return;
+            }
+
+            vehiculos = await InfoAutoService.GetVehiculosPorCedula(username);
+        }
+        catch(Exception ex)
+        {
+            mensajeAlerta = $"Error de comunicación, contacte al administrador. Error: {ex.Message}";
+        }
+        cargando = false;
+    }
+
+    private void EditarEntidad(VehiculoTaller entidad)
+    {
+        try
+        {
+            entidadActual = new VehiculoTaller
+            {
+                Placa = entidad.Placa,
+                ModeloCod = entidad.ModeloCod,
+                ModeloDesc = entidad.ModeloDesc,
+                Anio = entidad.Anio,
+                Color = entidad.Color,
+                NumeroOs = entidad.NumeroOs,
+                NomDpto = entidad.NomDpto,
+                SubtipoOs = entidad.SubtipoOs,
+                FechaRecep = entidad.FechaRecep,
+                FechaPrometida = entidad.FechaPrometida,
+                EstadoOs = entidad.EstadoOs,
+                Asesor = entidad.Asesor
+            };
+            mostrarFormulario = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private void Cancelar()
+    {
+        mostrarFormulario = false;
+    }
+
+    private void Regresar() => NavManager.NavigateTo($"/");
+}
